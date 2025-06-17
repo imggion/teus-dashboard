@@ -1,25 +1,18 @@
 <script setup lang="ts">
-import HomeLayout from '@/layouts/HomeLayout.vue'
-import HeaderLogo from '@/components/HeaderLogo.vue'
-import Navbar from '@/components/navbar/Navbar.vue'
+import SidebarLayout from '@/layouts/SidebarLayout.vue'
 import ServiceTabs from '@/components/services/ServiceTabs.vue'
 </script>
 
 <template>
-  <main>
-    <HomeLayout>
-      <Navbar />
-      <div class="bg-[#121212] text-white flex flex-col items-center justify-center p-5">
-        <HeaderLogo text="Services Management" class="mb-10" />
+  <SidebarLayout>
+    <div class="mb-8">
+      <h2 class="text-3xl font-bold text-white mb-2">Services</h2>
+      <p class="text-gray-400">Manage and monitor your Docker containers and system services</p>
+    </div>
 
-        <div class="w-full max-w-7xl">
-          <div
-            class="bg-[#1e1e1e] bg-opacity-50 backdrop-blur-lg p-4 rounded-3xl shadow-xl border border-white/5 transition-transform duration-300"
-          >
-            <ServiceTabs />
-          </div>
-        </div>
-      </div>
-    </HomeLayout>
-  </main>
+    <!-- Service Management Tabs -->
+    <div class="bg-[#1e1e1e] rounded-2xl p-6 border border-gray-800">
+      <ServiceTabs />
+    </div>
+  </SidebarLayout>
 </template>

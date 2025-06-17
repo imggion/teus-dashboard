@@ -46,9 +46,7 @@ const router = createRouter({
 router.beforeEach((to, from, next) => {
   const authStore = useAuthStore()
   const requiresAuth = to.matched.some((record) => record.meta.requiresAuth === true)
-
-  // FIXME: this check is broken, is always false
-  const isAuthenticated = authStore.getToken() !== null
+  const isAuthenticated = authStore.checkAuth()
 
   if (requiresAuth && !isAuthenticated) {
     next('/login')

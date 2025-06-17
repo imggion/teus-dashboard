@@ -43,6 +43,8 @@ export const useAuthStore = defineStore('auth', () => {
 
   const checkAuth = () => {
     const token = TokenManager.getAccessToken()
+
+    // TODO: Add server check to verify token is valid
     isAuthenticated.value = token !== null
     return isAuthenticated.value
   }

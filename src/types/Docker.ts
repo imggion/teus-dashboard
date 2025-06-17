@@ -3,6 +3,13 @@
  * ------------------------------------------------------------
  */
 export type Containers = Container[]
+export const DockerAction = {
+  stop: 'STOP',
+  start: 'START',
+  restart: 'RESTART',
+  delete: 'DELETE',
+} as const
+export type DockerAction = (typeof DockerAction)[keyof typeof DockerAction]
 
 /* ------------------------------------------------------------
  * Images

@@ -1,3 +1,97 @@
+<script setup lang="ts">
+import { ref, reactive, computed } from 'vue'
+import { useServicesStore } from '@/stores/services'
+import type { ServicesSchema } from '@/types/Services'
+import { Icons } from '@/configs/Icons'
+import { Icon } from '@iconify/vue'
+import { toast } from 'vue-sonner'
+
+// Props
+const props = defineProps({
+  isOpen: {
+    type: Boolean,
+    default: false,
+  },
+})
+
+// Emits
+const emit = defineEmits(['close', 'service-added'])
+
+// Store
+const servicesStore = useServicesStore()
+const loading = ref(false)
+
+// Form data
+const formData = reactive<ServicesSchema>({
+  name: '',
+  link: null,
+  icon: '',
+})
+
+const showIconPicker = ref(false)
+const iconSearch = ref('')
+
+const closeModal = () => {
+  emit('close')
+}
+
+const resetForm = () => {
+  formData.name = ''
+  formData.link = null
+  formData.icon = ''
+}
+
+const submitForm = async () => {
+  loading.value = true
+  try {
+    const newService = servicesStore.addService({
+      name: formData.name,
+      link: formData.link,
+      icon: formData.icon,
+    })
+
+    resetForm()
+    emit('service-added', newService)
+    toast.success('Service added')
+    closeModal()
+  } catch (error) {
+    console.error('Error during service saving:', error)
+    toast.error('Failed to add service')
+  } finally {
+    loading.value = false
+  }
+}
+
+// Ottieni l'icona tramite il nome dalla collezione Icons
+const getIconByName = (name: string) => {
+  return Icons[name as keyof typeof Icons] || ''
+}
+
+// Seleziona un'icona e chiudi il selettore
+const selectIcon = (name: string) => {
+  formData.icon = name
+  showIconPicker.value = false
+}
+
+// Filtra le icone in base alla ricerca
+const filteredIcons = computed(() => {
+  if (!iconSearch.value) {
+    return Icons
+  }
+
+  const searchTerm = iconSearch.value.toLowerCase()
+  const result: Record<string, string> = {}
+
+  Object.entries(Icons).forEach(([key, value]) => {
+    if (key.toLowerCase().includes(searchTerm)) {
+      result[key] = value
+    }
+  })
+
+  return result
+})
+</script>
+
 <template>
   <Teleport to="body">
     <Transition
@@ -196,96 +290,6 @@
     </Transition>
   </Teleport>
 </template>
-
-<script setup lang="ts">
-import { ref, reactive, computed } from 'vue'
-import { useServicesStore } from '@/stores/services'
-import type { ServicesSchema } from '@/types/Services'
-import { Icons } from '@/configs/Icons'
-import { Icon } from '@iconify/vue'
-// Props
-const props = defineProps({
-  isOpen: {
-    type: Boolean,
-    default: false,
-  },
-})
-
-// Emits
-const emit = defineEmits(['close', 'service-added'])
-
-// Store
-const servicesStore = useServicesStore()
-const loading = ref(false)
-
-// Form data
-const formData = reactive<ServicesSchema>({
-  name: '',
-  link: null,
-  icon: '',
-})
-
-const showIconPicker = ref(false)
-const iconSearch = ref('')
-
-const closeModal = () => {
-  emit('close')
-}
-
-const resetForm = () => {
-  formData.name = ''
-  formData.link = null
-  formData.icon = ''
-}
-
-const submitForm = async () => {
-  loading.value = true
-  try {
-    const newService = servicesStore.addService({
-      name: formData.name,
-      link: formData.link,
-      icon: formData.icon,
-    })
-
-    resetForm()
-    emit('service-added', newService)
-    closeModal()
-  } catch (error) {
-    console.error('Error during service saving:', error)
-  } finally {
-    loading.value = false
-  }
-}
-
-// Ottieni l'icona tramite il nome dalla collezione Icons
-const getIconByName = (name: string) => {
-  return Icons[name as keyof typeof Icons] || ''
-}
-
-// Seleziona un'icona e chiudi il selettore
-const selectIcon = (name: string) => {
-  formData.icon = name
-  showIconPicker.value = false
-}
-
-// Filtra le icone in base alla ricerca
-const filteredIcons = computed(() => {
-  if (!iconSearch.value) {
-    return Icons
-  }
-
-  const searchTerm = iconSearch.value.toLowerCase()
-  const result: Record<string, string> = {}
-
-  Object.entries(Icons).forEach(([key, value]) => {
-    if (key.toLowerCase().includes(searchTerm)) {
-      result[key] = value
-    }
-  })
-
-  return result
-})
-</script>
 
 <style scoped>
 .icon-smaller :deep(svg) {

@@ -1,186 +1,10 @@
-<template>
-  <div
-    class="bg-[#1e1e1e] rounded-3xl border border-gray-700/30 overflow-hidden shadow-lg transition-all duration-500 hover:shadow-xl hover:shadow-purple-500/5 hover:border-purple-500/20"
-  >
-    <div class="p-4">
-      <div class="flex justify-between items-center mb-5">
-        <h2 class="text-xl font-semibold text-gray-200 flex items-center gap-2">
-          <span class="opacity-0 animate-fade-in-left" style="animation-delay: 0.1s"
-            >System Information</span
-          >
-          <div
-            v-if="isLoading"
-            class="w-4 h-4 border-2 border-purple-400/30 border-t-purple-400 rounded-full animate-spin opacity-0 animate-fade-in"
-            style="animation-delay: 0.2s"
-          ></div>
-        </h2>
-        <div class="flex gap-2 opacity-0 animate-fade-in-right" style="animation-delay: 0.3s">
-          <button
-            @click.prevent="handleRefetchSysInfo"
-            :disabled="isLoading"
-            class="bg-[#2a2a2a] cursor-pointer hover:bg-[#3a3a3a] disabled:opacity-50 disabled:cursor-not-allowed text-gray-200 px-3 py-1 rounded-lg text-sm flex items-center gap-1 transition-all duration-300 hover:scale-105 active:scale-95 group"
-          >
-            <span class="transition-transform duration-200 group-hover:translate-x-[-2px]"
-              >Refresh</span
-            >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              :class="[
-                'transition-transform duration-300 group-hover:translate-x-1',
-                isLoading ? 'animate-spin' : 'group-hover:rotate-90',
-              ]"
-            >
-              <path
-                fill="currentColor"
-                d="M17.65 6.35A7.958 7.958 0 0 0 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4z"
-              />
-            </svg>
-          </button>
-        </div>
-      </div>
-
-      <!-- Loading Skeleton -->
-      <div
-        v-if="isLoading && !systemInfoServices.hostname"
-        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2"
-      >
-        <div
-          v-for="i in 8"
-          :key="i"
-          class="animate-pulse bg-[#2a2a2a] rounded-2xl p-4 h-24"
-          :style="`animation-delay: ${i * 0.1}s`"
-        >
-          <div class="h-4 bg-gray-700 rounded w-3/4 mb-2"></div>
-          <div class="h-6 bg-gray-600 rounded w-1/2"></div>
-        </div>
-      </div>
-
-      <!-- System Info Grid -->
-      <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
-        <!-- Hostname -->
-        <div class="opacity-0 animate-slide-in-card" style="animation-delay: 0.1s">
-          <GenericSysInfoCard icon="home" title="Hostname">
-            <p
-              class="text-gray-200 font-medium text-lg transition-all duration-300 hover:text-purple-300"
-            >
-              {{ systemInfoServices.hostname || 'Loading...' }}
-            </p>
-          </GenericSysInfoCard>
-        </div>
-
-        <!-- Operating System -->
-        <div class="opacity-0 animate-slide-in-card" style="animation-delay: 0.2s">
-          <GenericSysInfoCard icon="serverStack" title="Operating System">
-            <p
-              class="text-gray-200 font-medium text-lg transition-all duration-300 hover:text-purple-300"
-            >
-              {{ systemInfoServices.os || 'Loading...' }}
-            </p>
-          </GenericSysInfoCard>
-        </div>
-
-        <!-- Kernel Version -->
-        <div class="opacity-0 animate-slide-in-card" style="animation-delay: 0.3s">
-          <GenericSysInfoCard icon="horizontalKeyframe" title="Kernel Version">
-            <p
-              class="text-gray-200 font-medium text-lg transition-all duration-300 hover:text-purple-300"
-            >
-              {{ systemInfoServices.kernel_version || 'Loading...' }}
-            </p>
-          </GenericSysInfoCard>
-        </div>
-
-        <!-- Uptime -->
-        <div class="opacity-0 animate-slide-in-card" style="animation-delay: 0.4s">
-          <GenericSysInfoCard icon="clock" title="Uptime">
-            <p
-              class="text-gray-200 font-medium text-lg transition-all duration-300 hover:text-purple-300"
-            >
-              {{ systemInfoServices.uptime || 'Loading...' }}
-            </p>
-          </GenericSysInfoCard>
-        </div>
-
-        <!-- IP Address -->
-        <div class="opacity-0 animate-slide-in-card" style="animation-delay: 0.5s">
-          <GenericSysInfoCard icon="globe" title="IP Address">
-            <p
-              class="text-gray-200 font-medium text-lg transition-all duration-300 hover:text-purple-300"
-            >
-              {{ getPrimaryIPv4 }}
-            </p>
-          </GenericSysInfoCard>
-        </div>
-
-        <!-- Network Interfaces -->
-        <div class="opacity-0 animate-slide-in-card" style="animation-delay: 0.6s">
-          <GenericSysInfoCard icon="globe" title="Networks">
-            <template #end-element>
-              <select
-                v-if="sortedNetworks.length > 0"
-                v-model="selectedNetworkInterface"
-                class="px-2 py-1 bg-[#2a2a2a] rounded-lg text-gray-200 text-sm border border-gray-700/30 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all duration-300 hover:bg-[#3a3a3a]"
-              >
-                <option
-                  v-for="network in sortedNetworks"
-                  :key="`${network.interface}-${network.addr}`"
-                  :value="`${network.interface}-${network.addr}`"
-                >
-                  {{ network.interface }} - {{ isIPv4(network.addr) ? 'IPv4' : 'IPv6' }}
-                </option>
-              </select>
-            </template>
-            <p
-              v-if="selectedNetworkInterface"
-              class="text-gray-200 font-medium text-lg mt-2 transition-all duration-300 hover:text-purple-300"
-            >
-              {{ getSelectedNetwork?.addr }}
-            </p>
-            <p v-else class="text-gray-400 text-sm mt-2">No networks available</p>
-          </GenericSysInfoCard>
-        </div>
-
-        <!-- MAC Addresses -->
-        <div class="opacity-0 animate-slide-in-card" style="animation-delay: 0.7s">
-          <GenericSysInfoCard icon="globe" title="MAC Addresses">
-            <template #end-element>
-              <select
-                v-if="sortedMacAddresses.length > 0"
-                v-model="selectedMacInterface"
-                class="px-2 py-1 bg-[#2a2a2a] rounded-lg text-gray-200 text-sm border border-gray-700/30 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all duration-300 hover:bg-[#3a3a3a]"
-              >
-                <option
-                  v-for="macAddress in sortedMacAddresses"
-                  :key="macAddress.interface"
-                  :value="macAddress.interface"
-                >
-                  {{ macAddress.interface }}
-                </option>
-              </select>
-            </template>
-            <p
-              v-if="selectedMacInterface"
-              class="text-gray-200 font-medium text-lg mt-2 transition-all duration-300 hover:text-purple-300"
-            >
-              {{ getSelectedMacAddress?.mac }}
-            </p>
-            <p v-else class="text-gray-400 text-sm mt-2">No MAC addresses available</p>
-          </GenericSysInfoCard>
-        </div>
-      </div>
-    </div>
-  </div>
-</template>
-
 <script setup lang="ts">
 import genericSystemServices from '@/services/GenericSysServices'
 import type { GenericSysinfoSchema } from '@/types/Sysinfo'
 import { ref, onMounted, computed, watch } from 'vue'
 import GenericSysInfoCard from './generics/GenericSysInfoCard.vue'
 import { useQuery } from '@tanstack/vue-query'
+import { toast } from 'vue-sonner'
 
 const systemInfoServices = ref<GenericSysinfoSchema>({})
 const selectedNetworkInterface = ref<string>('')
@@ -314,10 +138,11 @@ const getSelectedMacAddress = computed(() => {
 // Handlers
 const handleRefetchSysInfo = async () => {
   try {
-    await refetch()
+    await refetch().then(() => toast.success('System info updated'))
     await sortSysInfoData()
   } catch (error) {
     console.error('Failed to refetch system info:', error)
+    toast.error('Failed to refetch system info')
   }
 }
 
@@ -326,59 +151,215 @@ onMounted(() => {
 })
 </script>
 
+<template>
+  <div
+    class="bg-[#1e1e1e] rounded-3xl border border-gray-700/30 overflow-hidden shadow-lg transition-all duration-300 hover:shadow-xl hover:shadow-purple-500/5 hover:border-purple-500/20"
+  >
+    <div class="p-4">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-semibold text-gray-200 flex items-center gap-2">
+          <span>System Information</span>
+          <div
+            v-if="isLoading"
+            class="w-4 h-4 border-2 border-purple-400/30 border-t-purple-400 rounded-full animate-spin"
+          ></div>
+        </h2>
+        <div class="flex gap-2">
+          <button
+            @click.prevent="handleRefetchSysInfo"
+            :disabled="isLoading"
+            class="bg-[#2a2a2a] cursor-pointer hover:bg-[#3a3a3a] disabled:opacity-50 disabled:cursor-not-allowed text-gray-200 px-3 py-1 rounded-lg text-sm flex items-center gap-1 transition-all duration-200 group"
+          >
+            <span>Refresh</span>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              :class="[
+                'transition-transform duration-200',
+                isLoading ? 'animate-spin' : 'group-hover:rotate-90',
+              ]"
+            >
+              <path
+                fill="currentColor"
+                d="M17.65 6.35A7.958 7.958 0 0 0 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4z"
+              />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Loading Skeleton -->
+      <div
+        v-if="isLoading && !systemInfoServices.hostname"
+        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2"
+      >
+        <div v-for="i in 8" :key="i" class="animate-pulse bg-[#2a2a2a] rounded-2xl p-3 h-20">
+          <div class="h-4 bg-gray-700 rounded w-3/4 mb-2"></div>
+          <div class="h-6 bg-gray-600 rounded w-1/2"></div>
+        </div>
+      </div>
+
+      <!-- System Info Grid -->
+      <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
+        <!-- Hostname -->
+        <div class="flex">
+          <GenericSysInfoCard
+            icon="home"
+            title="Hostname"
+            class="flex-1 flex flex-col min-h-[120px]"
+          >
+            <div class="flex-1 flex items-center">
+              <p
+                class="text-gray-200 font-medium text-lg transition-colors duration-200 hover:text-purple-300"
+              >
+                {{ systemInfoServices.hostname || 'Loading...' }}
+              </p>
+            </div>
+          </GenericSysInfoCard>
+        </div>
+
+        <!-- Operating System -->
+        <div class="flex">
+          <GenericSysInfoCard
+            icon="serverStack"
+            title="Operating System"
+            class="flex-1 flex flex-col min-h-[120px]"
+          >
+            <div class="flex-1 flex items-center">
+              <p
+                class="text-gray-200 font-medium text-lg transition-colors duration-200 hover:text-purple-300"
+              >
+                {{ systemInfoServices.os || 'Loading...' }}
+              </p>
+            </div>
+          </GenericSysInfoCard>
+        </div>
+
+        <!-- Kernel Version -->
+        <div class="flex">
+          <GenericSysInfoCard
+            icon="horizontalKeyframe"
+            title="Kernel Version"
+            class="flex-1 flex flex-col min-h-[120px]"
+          >
+            <div class="flex-1 flex items-center">
+              <p
+                class="text-gray-200 font-medium text-lg transition-colors duration-200 hover:text-purple-300"
+              >
+                {{ systemInfoServices.kernel_version || 'Loading...' }}
+              </p>
+            </div>
+          </GenericSysInfoCard>
+        </div>
+
+        <!-- Uptime -->
+        <div class="flex">
+          <GenericSysInfoCard
+            icon="clock"
+            title="Uptime"
+            class="flex-1 flex flex-col min-h-[120px]"
+          >
+            <div class="flex-1 flex items-center">
+              <p
+                class="text-gray-200 font-medium text-lg transition-colors duration-200 hover:text-purple-300"
+              >
+                {{ systemInfoServices.uptime || 'Loading...' }}
+              </p>
+            </div>
+          </GenericSysInfoCard>
+        </div>
+
+        <!-- IP Address -->
+        <div class="flex">
+          <GenericSysInfoCard
+            icon="globe"
+            title="IP Address"
+            class="flex-1 flex flex-col min-h-[120px]"
+          >
+            <div class="flex-1 flex items-center">
+              <p
+                class="text-gray-200 font-medium text-lg transition-colors duration-200 hover:text-purple-300"
+              >
+                {{ getPrimaryIPv4 }}
+              </p>
+            </div>
+          </GenericSysInfoCard>
+        </div>
+
+        <!-- Network Interfaces -->
+        <div class="flex">
+          <GenericSysInfoCard
+            icon="globe"
+            title="Networks"
+            class="flex-1 flex flex-col min-h-[120px]"
+          >
+            <template #end-element>
+              <select
+                v-if="sortedNetworks.length > 0"
+                v-model="selectedNetworkInterface"
+                class="px-2 py-1 bg-[#2a2a2a] rounded-lg text-gray-200 text-sm border border-gray-700/30 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all duration-200 hover:bg-[#3a3a3a]"
+              >
+                <option
+                  v-for="network in sortedNetworks"
+                  :key="`${network.interface}-${network.addr}`"
+                  :value="`${network.interface}-${network.addr}`"
+                >
+                  {{ network.interface }} - {{ isIPv4(network.addr) ? 'IPv4' : 'IPv6' }}
+                </option>
+              </select>
+            </template>
+            <div class="flex-1 flex items-center">
+              <p
+                v-if="selectedNetworkInterface"
+                class="text-gray-200 font-medium text-lg transition-colors duration-200 hover:text-purple-300"
+              >
+                {{ getSelectedNetwork?.addr }}
+              </p>
+              <p v-else class="text-gray-400 text-sm">No networks available</p>
+            </div>
+          </GenericSysInfoCard>
+        </div>
+
+        <!-- MAC Addresses -->
+        <div class="flex">
+          <GenericSysInfoCard
+            icon="globe"
+            title="MAC Addresses"
+            class="flex-1 flex flex-col min-h-[120px]"
+          >
+            <template #end-element>
+              <select
+                v-if="sortedMacAddresses.length > 0"
+                v-model="selectedMacInterface"
+                class="px-2 py-1 bg-[#2a2a2a] rounded-lg text-gray-200 text-sm border border-gray-700/30 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all duration-200 hover:bg-[#3a3a3a]"
+              >
+                <option
+                  v-for="macAddress in sortedMacAddresses"
+                  :key="macAddress.interface"
+                  :value="macAddress.interface"
+                >
+                  {{ macAddress.interface }}
+                </option>
+              </select>
+            </template>
+            <div class="flex-1 flex items-center">
+              <p
+                v-if="selectedMacInterface"
+                class="text-gray-200 font-medium text-lg transition-colors duration-200 hover:text-purple-300"
+              >
+                {{ getSelectedMacAddress?.mac }}
+              </p>
+              <p v-else class="text-gray-400 text-sm">No MAC addresses available</p>
+            </div>
+          </GenericSysInfoCard>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
 <style scoped>
-@keyframes fade-in {
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes fade-in-left {
-  from {
-    opacity: 0;
-    transform: translateX(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes fade-in-right {
-  from {
-    opacity: 0;
-    transform: translateX(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes slide-in-card {
-  from {
-    opacity: 0;
-    transform: translateY(20px) scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-.animate-fade-in {
-  animation: fade-in 0.6s ease-out forwards;
-}
-
-.animate-fade-in-left {
-  animation: fade-in-left 0.8s ease-out forwards;
-}
-
-.animate-fade-in-right {
-  animation: fade-in-right 0.8s ease-out forwards;
-}
-
-.animate-slide-in-card {
-  animation: slide-in-card 0.8s ease-out forwards;
-}
+/* Removed all complex animations for smoother performance */
 </style>

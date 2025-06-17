@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-[#121212] rounded-xl p-4 border border-gray-700/20">
+  <div class="bg-[#121212] rounded-xl p-4 border border-gray-700/20 h-full flex flex-col">
     <div class="flex w-full items-center mb-2">
       <div class="text-purple-400 mr-2">
         <Icon class="self-center my-auto" :icon="computedIcon" />
@@ -9,7 +9,7 @@
         <slot name="end-element" />
       </div>
     </div>
-    <div>
+    <div class="flex-1">
       <slot />
     </div>
   </div>
