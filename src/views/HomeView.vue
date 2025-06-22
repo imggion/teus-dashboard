@@ -4,6 +4,7 @@ import ButtonGrid from '@/components/ButtonGrid.vue'
 import ChartsContainer from '@/components/ChartsContainer.vue'
 import SystemInfoCard from '@/components/SystemInfoCard.vue'
 import SystemResourceIndicators from '@/components/SystemResourceIndicators.vue'
+import DockerVersionCard from '@/components/DockerVersionCard.vue'
 </script>
 
 <template>
@@ -30,6 +31,9 @@ import SystemResourceIndicators from '@/components/SystemResourceIndicators.vue'
 
       <!-- System Information Card -->
       <SystemInfoCard />
+
+      <!-- Docker Version Card -->
+      <DockerVersionCard />
     </div>
   </SidebarLayout>
 </template>
