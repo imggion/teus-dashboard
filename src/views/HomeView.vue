@@ -17,6 +17,9 @@ import SystemResourceIndicators from '@/components/SystemResourceIndicators.vue'
     <!-- System Resource Indicators -->
     <SystemResourceIndicators />
 
+    <!-- Charts Container -->
+    <ChartsContainer />
+
     <!-- Main Content -->
     <div class="space-y-6">
       <!-- Services Grid -->
@@ -27,9 +30,6 @@ import SystemResourceIndicators from '@/components/SystemResourceIndicators.vue'
 
       <!-- System Information Card -->
       <SystemInfoCard />
-
-      <!-- Charts Container -->
-      <ChartsContainer />
     </div>
   </SidebarLayout>
 </template>

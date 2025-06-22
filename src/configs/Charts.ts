@@ -149,63 +149,61 @@ export const doughnutChartOptions = {
       display: true,
       position: 'bottom' as const,
       align: 'center' as const,
-      labels: {
-        color: 'rgba(255, 255, 255, 0.85)',
-        font: {
-          family: "'Inter', sans-serif",
-          size: 9,
-          weight: 500,
-        },
-        padding: 6,
-        usePointStyle: true,
-        pointStyle: 'circle' as const,
-        boxWidth: 8,
-        boxHeight: 8,
-        useBorderRadius: false,
-        maxLineLength: 2,
-        textAlign: 'left' as const,
-        generateLabels: function (chart: any) {
-          const data = chart.data
-          if (data.labels.length && data.datasets.length) {
-            return data.labels.map((label: string, i: number) => {
-              const dataset = data.datasets[0]
-              const backgroundColor = Array.isArray(dataset.backgroundColor)
-                ? dataset.backgroundColor[i]
-                : dataset.backgroundColor
-
-              // Improved label truncation with smart breaks
-              let displayText = label
-              if (label.length > 20) {
-                // Try to break at meaningful points
-                const parts = label.split(' ')
-                if (parts.length > 1) {
-                  let truncated = parts[0]
-                  for (let j = 1; j < parts.length; j++) {
-                    if ((truncated + ' ' + parts[j]).length <= 18) {
-                      truncated += ' ' + parts[j]
-                    } else {
-                      truncated += '...'
-                      break
-                    }
-                  }
-                  displayText = truncated
-                } else {
-                  displayText = label.substring(0, 17) + '...'
-                }
-              }
-
-              return {
-                text: displayText,
-                fillStyle: backgroundColor,
-                strokeStyle: backgroundColor,
-                lineWidth: 0,
-                index: i,
-              }
-            })
-          }
-          return []
-        },
-      },
+      // labels: {
+      // color: 'rgba(255, 255, 255, 0.85)',
+      // font: {
+      //   family: "'Inter', sans-serif",
+      //   size: 9,
+      //   weight: 500,
+      // },
+      // padding: 6,
+      // usePointStyle: true,
+      // pointStyle: 'circle' as const,
+      // boxWidth: 8,
+      // boxHeight: 8,
+      // useBorderRadius: false,
+      // maxLineLength: 2,
+      // textAlign: 'left' as const,
+      // generateLabels: function (chart: any) {
+      //   const data = chart.data
+      //   if (data.labels.length && data.datasets.length) {
+      //     return data.labels.map((label: string, i: number) => {
+      //       const dataset = data.datasets[0]
+      //       const backgroundColor = Array.isArray(dataset.backgroundColor)
+      //         ? dataset.backgroundColor[i]
+      //         : dataset.backgroundColor
+      //       // Improved label truncation with smart breaks
+      //       let displayText = label
+      //       if (label.length > 20) {
+      //         // Try to break at meaningful points
+      //         const parts = label.split(' ')
+      //         if (parts.length > 1) {
+      //           let truncated = parts[0]
+      //           for (let j = 1; j < parts.length; j++) {
+      //             if ((truncated + ' ' + parts[j]).length <= 18) {
+      //               truncated += ' ' + parts[j]
+      //             } else {
+      //               truncated += '...'
+      //               break
+      //             }
+      //           }
+      //           displayText = truncated
+      //         } else {
+      //           displayText = label.substring(0, 17) + '...'
+      //         }
+      //       }
+      //       return {
+      //         text: displayText,
+      //         fillStyle: backgroundColor,
+      //         strokeStyle: backgroundColor,
+      //         lineWidth: 0,
+      //         index: i,
+      //       }
+      //     })
+      //   }
+      //   return []
+      // },
+      // },
     },
     tooltip: {
       backgroundColor: 'rgba(15, 15, 15, 0.96)',

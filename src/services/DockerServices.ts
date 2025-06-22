@@ -14,9 +14,9 @@ export const dockerServices = {
     }
   },
 
-  async getContainers(): Promise<Containers> {
+  async getContainers(all = false): Promise<Containers> {
     try {
-      const response = await axios.get<Containers>('/teus/docker/containers')
+      const response = await axios.get<Containers>(`/teus/docker/containers?all=${all}`)
       return response.data
     } catch (error) {
       console.error('Error fetching Docker containers:', error)

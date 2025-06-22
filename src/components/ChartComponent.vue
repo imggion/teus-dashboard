@@ -304,8 +304,8 @@ function prepareChartData() {
       datasets: [
         {
           data: [],
-          backgroundColor: [],
-          borderColor: [],
+          backgroundColor: [props.backgroundColor],
+          borderColor: [props.borderColor],
           borderWidth: 1,
           cutout: '75%',
           spacing: 2,
@@ -364,15 +364,20 @@ function prepareChartOptions() {
   } else if (props.chartType === 'doughnut') {
     return {
       ...baseOptions,
+      ...doughnutChartOptions,
       plugins: {
         ...doughnutChartOptions.plugins,
+        legend: {
+          ...doughnutChartOptions.plugins.legend,
+          labels: {
+            // ...doughnutChartOptions.plugins.legend.labels,
+            color: 'rgba(255, 255, 255, 0.9)', // Explicitly force white text
+          },
+        },
         title: {
           display: false, // Remove title to reduce overhead
         },
       },
-      cutout: '75%',
-      spacing: 2,
-      borderRadius: 4,
       animation: {
         duration: 0,
       },
