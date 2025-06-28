@@ -1,52 +1,39 @@
 <script setup lang="ts">
-import HomeLayout from '@/layouts/HomeLayout.vue'
-import HeaderLogo from '@/components/HeaderLogo.vue'
+import SidebarLayout from '@/layouts/SidebarLayout.vue'
 import ButtonGrid from '@/components/ButtonGrid.vue'
 import ChartsContainer from '@/components/ChartsContainer.vue'
-import Navbar from '@/components/navbar/Navbar.vue'
 import SystemInfoCard from '@/components/SystemInfoCard.vue'
+import SystemResourceIndicators from '@/components/SystemResourceIndicators.vue'
+import DockerVersionCard from '@/components/DockerVersionCard.vue'
 </script>
 
 <template>
-  <main>
-    <HomeLayout>
-      <Navbar />
-      <div class="bg-[#121212] text-white flex flex-col items-center justify-center p-4">
-        <HeaderLogo text="Welcome back" class="mb-10" />
+  <SidebarLayout>
+    <!-- Welcome Header -->
+    <div class="mb-6">
+      <h2 class="text-3xl font-bold text-white mb-2">Welcome to Teus</h2>
+      <p class="text-gray-400">Monitor your services and manage your system infrastructure</p>
+    </div>
 
-        <div class="w-full max-w-7xl space-y-8">
-          <!-- Services Grid -->
-          <div
-            class="bg-[#1e1e1e] bg-opacity-50 backdrop-blur-lg p-4 rounded-3xl shadow-xl border border-white/5 transition-all duration-500 opacity-0 translate-y-8 animate-slide-in-up hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-500/20"
-            style="animation-delay: 0.4s"
-          >
-            <ButtonGrid />
-          </div>
+    <!-- System Resource Indicators -->
+    <SystemResourceIndicators />
 
-          <!-- System Information Card -->
-          <div class="opacity-0 translate-y-8 animate-slide-in-up" style="animation-delay: 0.6s">
-            <SystemInfoCard />
-          </div>
+    <!-- Charts Container -->
+    <ChartsContainer />
 
-          <!-- Charts Container -->
-          <div class="opacity-0 translate-y-8 animate-slide-in-up" style="animation-delay: 0.8s">
-            <ChartsContainer />
-          </div>
-        </div>
+    <!-- Main Content -->
+    <div class="space-y-6">
+      <!-- Services Grid -->
+      <div class="bg-[#1e1e1e] rounded-2xl p-5 border border-gray-800">
+        <h3 class="text-xl font-semibold text-white mb-5">Quick Access</h3>
+        <ButtonGrid />
       </div>
-    </HomeLayout>
-  </main>
+
+      <!-- System Information Card -->
+      <SystemInfoCard />
+
+      <!-- Docker Version Card -->
+      <DockerVersionCard />
+    </div>
+  </SidebarLayout>
 </template>
-
-<style scoped>
-@keyframes slide-in-up {
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.animate-slide-in-up {
-  animation: slide-in-up 0.8s ease-out forwards;
-}
-</style>

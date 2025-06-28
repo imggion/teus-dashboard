@@ -25,6 +25,8 @@ export const Icons = {
   viewOff: 'hugeicons:view-off',
   flyingHuman: 'hugeicons:flying-human',
   logout: 'hugeicons:logout-01',
+  cpu: 'hugeicons:cpu',
+  disk: 'hugeicons:floppy-disk',
 } as const
 
 export type IconName = keyof typeof Icons

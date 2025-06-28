@@ -2,6 +2,7 @@ import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import router from '@/router'
 import { TokenManager } from '@/managers/TokenManager'
+import { authServices } from '@/services/AuthServices'
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<string | null>(null)
@@ -41,9 +42,10 @@ export const useAuthStore = defineStore('auth', () => {
     router.push('/login')
   }
 
-  const checkAuth = () => {
-    const token = TokenManager.getAccessToken()
-    isAuthenticated.value = token !== null
+  const checkAuth = async () => {
+    const isAuth = await authServices.isAuth()
+    isAuthenticated.value = isAuth
+
     return isAuthenticated.value
   }
 

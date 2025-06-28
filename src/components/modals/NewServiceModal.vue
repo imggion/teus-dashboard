@@ -1,3 +1,119 @@
+<script setup lang="ts">
+import { ref, reactive, computed, toRaw } from 'vue'
+import type { ServicePayload, ServicesPureSchema } from '@/types/Services'
+import { Icons } from '@/configs/Icons'
+import { Icon } from '@iconify/vue'
+import { toast } from 'vue-sonner'
+import { useMutation } from '@tanstack/vue-query'
+import { bookmarkServices } from '@/services/BookmarkServices'
+import ErrorMessage from '@/components/generics/ErrorMessage.vue'
+
+// Props
+const props = defineProps({
+  isOpen: {
+    type: Boolean,
+    default: false,
+  },
+})
+
+// Emits
+const emit = defineEmits(['close', 'service-added'])
+
+const errorMessage = ref('')
+
+const { mutate: createBookmark, isPending: isCreatingBookmark } = useMutation({
+  mutationFn: (payload: ServicePayload) => bookmarkServices.createBookmark(payload),
+  onSuccess: () => {
+    resetForm()
+    emit('service-added')
+    toast.success('Service added')
+    closeModal()
+  },
+  onError: (error: any) => {
+    console.error('Error during service saving:', error)
+    toast.error('Failed to add service')
+    errorMessage.value =
+      error.response?.data?.message || 'An error occurred while adding the service'
+  },
+})
+
+// Form data
+const formData = reactive<ServicePayload>({
+  name: '',
+  link: null,
+  icon: '',
+})
+
+const showIconPicker = ref(false)
+const iconSearch = ref('')
+
+const closeModal = () => {
+  emit('close')
+}
+
+const resetForm = () => {
+  formData.name = ''
+  formData.link = null
+  formData.icon = ''
+}
+
+const validateForm = () => {
+  if (!formData.name || !formData.name.trim()) {
+    errorMessage.value = 'Service name is required'
+    return false
+  }
+
+  if (!formData.icon || !formData.icon.trim()) {
+    errorMessage.value = 'Icon is required'
+    return false
+  }
+
+  return true
+}
+
+const submitForm = () => {
+  errorMessage.value = ''
+
+  if (!validateForm()) {
+    return
+  }
+
+  // Convert reactive object to plain object for proper serialization
+  const payload = toRaw(formData)
+  payload.icon = Icons[payload.icon as keyof typeof Icons] || ''
+  createBookmark(payload)
+}
+
+// Ottieni l'icona tramite il nome dalla collezione Icons
+const getIconByName = (name: string) => {
+  return Icons[name as keyof typeof Icons] || ''
+}
+
+// Seleziona un'icona e chiudi il selettore
+const selectIcon = (name: string) => {
+  formData.icon = name
+  showIconPicker.value = false
+}
+
+// Filtra le icone in base alla ricerca
+const filteredIcons = computed(() => {
+  if (!iconSearch.value) {
+    return Icons
+  }
+
+  const searchTerm = iconSearch.value.toLowerCase()
+  const result: Record<string, string> = {}
+
+  Object.entries(Icons).forEach(([key, value]) => {
+    if (key.toLowerCase().includes(searchTerm)) {
+      result[key] = value
+    }
+  })
+
+  return result
+})
+</script>
+
 <template>
   <Teleport to="body">
     <Transition
@@ -43,6 +159,9 @@
 
             <!-- Body -->
             <div class="px-4 pb-4">
+              <!-- Error Message -->
+              <ErrorMessage v-if="errorMessage" :error-message="errorMessage" class="mb-4" />
+
               <form @submit.prevent="submitForm">
                 <!-- Name -->
                 <div class="mb-5">
@@ -159,10 +278,10 @@
                   </button>
                   <button
                     type="submit"
-                    :disabled="loading"
+                    :disabled="isCreatingBookmark"
                     class="cursor-pointer px-4 py-2 text-xs font-medium text-white bg-[#2e2e2e] border border-neutral-700/80 hover:bg-[#3e3e3e] active:bg-[#4e4e4e] rounded-xl focus:outline-none focus:ring-1 disabled:cursor-not-allowed transition-all"
                   >
-                    <span v-if="loading">
+                    <span v-if="isCreatingBookmark">
                       <svg
                         class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline-block"
                         xmlns="http://www.w3.org/2000/svg"
@@ -196,96 +315,6 @@
     </Transition>
   </Teleport>
 </template>
-
-<script setup lang="ts">
-import { ref, reactive, computed } from 'vue'
-import { useServicesStore } from '@/stores/services'
-import type { ServicesSchema } from '@/types/Services'
-import { Icons } from '@/configs/Icons'
-import { Icon } from '@iconify/vue'
-// Props
-const props = defineProps({
-  isOpen: {
-    type: Boolean,
-    default: false,
-  },
-})
-
-// Emits
-const emit = defineEmits(['close', 'service-added'])
-
-// Store
-const servicesStore = useServicesStore()
-const loading = ref(false)
-
-// Form data
-const formData = reactive<ServicesSchema>({
-  name: '',
-  link: null,
-  icon: '',
-})
-
-const showIconPicker = ref(false)
-const iconSearch = ref('')
-
-const closeModal = () => {
-  emit('close')
-}
-
-const resetForm = () => {
-  formData.name = ''
-  formData.link = null
-  formData.icon = ''
-}
-
-const submitForm = async () => {
-  loading.value = true
-  try {
-    const newService = servicesStore.addService({
-      name: formData.name,
-      link: formData.link,
-      icon: formData.icon,
-    })
-
-    resetForm()
-    emit('service-added', newService)
-    closeModal()
-  } catch (error) {
-    console.error('Error during service saving:', error)
-  } finally {
-    loading.value = false
-  }
-}
-
-// Ottieni l'icona tramite il nome dalla collezione Icons
-const getIconByName = (name: string) => {
-  return Icons[name as keyof typeof Icons] || ''
-}
-
-// Seleziona un'icona e chiudi il selettore
-const selectIcon = (name: string) => {
-  formData.icon = name
-  showIconPicker.value = false
-}
-
-// Filtra le icone in base alla ricerca
-const filteredIcons = computed(() => {
-  if (!iconSearch.value) {
-    return Icons
-  }
-
-  const searchTerm = iconSearch.value.toLowerCase()
-  const result: Record<string, string> = {}
-
-  Object.entries(Icons).forEach(([key, value]) => {
-    if (key.toLowerCase().includes(searchTerm)) {
-      result[key] = value
-    }
-  })
-
-  return result
-})
-</script>
 
 <style scoped>
 .icon-smaller :deep(svg) {

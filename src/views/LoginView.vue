@@ -12,6 +12,7 @@ import { useAuthStore } from '@/stores/auth'
 import ErrorMessage from '@/components/generics/ErrorMessage.vue'
 import { configServices } from '@/services/ConfigServices'
 import { TeusKey } from '@/types/Config'
+import { toast } from 'vue-sonner'
 
 const router = useRouter()
 const isLoading = ref(false)
@@ -53,12 +54,13 @@ const { data: isFirstLogin, refetch: refetchIsFirstLogin } = useQuery({
 const { mutate: login } = useMutation({
   mutationFn: authServices.login,
   onSuccess: (data) => {
-    console.log(data)
     authStore.setToken(data.access)
+    toast.success('Welcome back!')
     router.push('/')
   },
   onError: (error: any) => {
     isLoading.value = false
+    toast.error('Login failed')
     errorMessage.value = error.response.data.message || 'An error occurred during login'
   },
 })

@@ -23,6 +23,7 @@
           </svg>
         </button>
         <button
+          disabled
           class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded-lg text-sm flex items-center gap-1"
         >
           <span>New container</span>
@@ -40,6 +41,81 @@
         placeholder="Search containers..."
         class="w-full bg-[#2a2a2a] border border-gray-700 rounded-xl px-4 py-2 text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500 transition-all"
       />
+    </div>
+
+    <!-- Filter and View Controls -->
+    <div class="mb-6 flex items-center justify-between">
+      <div class="flex items-center gap-4">
+        <!-- Filter Buttons -->
+        <div class="flex gap-2">
+          <button
+            @click="setContainerFilter('running')"
+            :disabled="isLoading"
+            :class="[
+              'px-4 py-2 rounded-lg text-sm font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed',
+              containerFilter === 'running'
+                ? 'bg-purple-600 text-white'
+                : 'bg-[#2a2a2a] text-gray-400 hover:bg-[#3a3a3a] hover:text-gray-200',
+            ]"
+          >
+            Running Only
+          </button>
+          <button
+            @click="setContainerFilter('all')"
+            :disabled="isLoading"
+            :class="[
+              'px-4 py-2 rounded-lg text-sm font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed',
+              containerFilter === 'all'
+                ? 'bg-purple-600 text-white'
+                : 'bg-[#2a2a2a] text-gray-400 hover:bg-[#3a3a3a] hover:text-gray-200',
+            ]"
+          >
+            All Containers
+          </button>
+        </div>
+
+        <!-- View Toggle -->
+        <div class="flex gap-1 bg-[#2a2a2a] rounded-lg p-1">
+          <button
+            @click="viewMode = 'grid'"
+            :class="[
+              'p-2 rounded text-sm transition-all',
+              viewMode === 'grid'
+                ? 'bg-purple-600 text-white'
+                : 'text-gray-400 hover:text-gray-200',
+            ]"
+            title="Grid View"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24">
+              <path
+                fill="currentColor"
+                d="M3 3h8v8H3V3zm10 0h8v8h-8V3zM3 13h8v8H3v-8zm10 0h8v8h-8v-8z"
+              />
+            </svg>
+          </button>
+          <button
+            @click="viewMode = 'list'"
+            :class="[
+              'p-2 rounded text-sm transition-all',
+              viewMode === 'list'
+                ? 'bg-purple-600 text-white'
+                : 'text-gray-400 hover:text-gray-200',
+            ]"
+            title="List View"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24">
+              <path
+                fill="currentColor"
+                d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"
+              />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div v-if="!isLoading && containers.length > 0" class="text-sm text-gray-400">
+        {{ filteredContainers.length }} of {{ containers.length }} containers
+      </div>
     </div>
 
     <!-- Loading State -->
@@ -98,13 +174,18 @@
         {{
           searchQuery
             ? 'Try adjusting your search criteria'
-            : 'No Docker containers are currently running'
+            : containerFilter === 'running'
+              ? 'No Docker containers are currently running'
+              : 'No Docker containers found'
         }}
       </p>
     </div>
 
-    <!-- Container Grid -->
-    <div v-else class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+    <!-- Container Grid View -->
+    <div
+      v-else-if="viewMode === 'grid'"
+      class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3"
+    >
       <div
         v-for="container in filteredContainers"
         :key="container.Id"
@@ -191,21 +272,21 @@
               <button
                 v-if="container.State === 'running'"
                 class="text-xs bg-red-400/10 hover:bg-red-400/20 text-red-400 py-1 px-2 rounded transition-colors"
-                @click.stop="handleContainerAction('stop', container)"
+                @click.stop="handleContainerAction(DockerAction.stop, container)"
               >
                 Stop
               </button>
               <button
                 v-else-if="container.State === 'exited'"
                 class="text-xs bg-green-400/10 hover:bg-green-400/20 text-green-400 py-1 px-2 rounded transition-colors"
-                @click.stop="handleContainerAction('start', container)"
+                @click.stop="handleContainerAction(DockerAction.start, container)"
               >
                 Start
               </button>
               <button
                 v-else
                 class="text-xs bg-yellow-400/10 hover:bg-yellow-400/20 text-yellow-400 py-1 px-2 rounded transition-colors"
-                @click.stop="handleContainerAction('restart', container)"
+                @click.stop="handleContainerAction(DockerAction.restart, container)"
               >
                 Restart
               </button>
@@ -213,7 +294,7 @@
             <div class="flex gap-2">
               <button
                 class="text-gray-400 hover:text-red-400 transition-colors"
-                @click.stop="handleContainerAction('delete', container)"
+                @click.stop="handleContainerAction(DockerAction.delete, container)"
                 title="Delete container"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24">
@@ -245,6 +326,138 @@
         </div>
       </div>
     </div>
+
+    <!-- Container List View -->
+    <div v-else class="bg-[#1a1a1a] rounded-xl border border-gray-700/30 overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full">
+          <thead class="bg-[#2a2a2a] border-b border-gray-700/30">
+            <tr>
+              <th class="text-left py-3 px-4 text-sm font-medium text-gray-300">Status</th>
+              <th class="text-left py-3 px-4 text-sm font-medium text-gray-300">Name</th>
+              <th class="text-left py-3 px-4 text-sm font-medium text-gray-300">Image</th>
+              <th class="text-left py-3 px-4 text-sm font-medium text-gray-300">ID</th>
+              <th class="text-left py-3 px-4 text-sm font-medium text-gray-300">Ports</th>
+              <th class="text-left py-3 px-4 text-sm font-medium text-gray-300">Created</th>
+              <th class="text-center py-3 px-4 text-sm font-medium text-gray-300">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-700/30">
+            <tr
+              v-for="container in filteredContainers"
+              :key="container.Id"
+              class="hover:bg-[#2a2a2a] transition-colors cursor-pointer"
+              @click="viewContainerDetails(container)"
+            >
+              <td class="py-3 px-4">
+                <div class="flex items-center gap-2">
+                  <div :class="['h-2.5 w-2.5 rounded-full', getStatusColor(container.State)]"></div>
+                  <div
+                    class="text-xs font-medium rounded-full px-2 py-0.5"
+                    :class="getStatusBadgeClass(container.State)"
+                  >
+                    {{ container.State }}
+                  </div>
+                </div>
+              </td>
+              <td class="py-3 px-4">
+                <div class="font-medium text-gray-200 truncate max-w-[200px]">
+                  {{ getContainerName(container) }}
+                </div>
+              </td>
+              <td class="py-3 px-4">
+                <div class="text-gray-200 truncate max-w-[200px]" :title="container.Image">
+                  {{ container.Image }}
+                </div>
+              </td>
+              <td class="py-3 px-4">
+                <div class="text-gray-200 font-mono text-xs">
+                  {{ container.Id.substring(0, 12) }}
+                </div>
+              </td>
+              <td class="py-3 px-4">
+                <div class="text-gray-200 text-sm">
+                  {{ formatPorts(container.Ports) }}
+                </div>
+              </td>
+              <td class="py-3 px-4">
+                <div class="text-gray-400 text-sm">
+                  {{ formatDate(container.Created) }}
+                </div>
+              </td>
+              <td class="py-3 px-4">
+                <div class="flex items-center justify-center gap-2">
+                  <button
+                    v-if="container.State === 'running'"
+                    class="text-xs bg-red-400/10 hover:bg-red-400/20 text-red-400 py-1.5 px-3 rounded transition-colors"
+                    @click.stop="handleContainerAction(DockerAction.stop, container)"
+                  >
+                    Stop
+                  </button>
+                  <button
+                    v-else-if="container.State === 'exited'"
+                    class="text-xs bg-green-400/10 hover:bg-green-400/20 text-green-400 py-1.5 px-3 rounded transition-colors"
+                    @click.stop="handleContainerAction(DockerAction.start, container)"
+                  >
+                    Start
+                  </button>
+                  <button
+                    v-else
+                    class="text-xs bg-yellow-400/10 hover:bg-yellow-400/20 text-yellow-400 py-1.5 px-3 rounded transition-colors"
+                    @click.stop="handleContainerAction(DockerAction.restart, container)"
+                  >
+                    Restart
+                  </button>
+
+                  <button
+                    class="text-gray-400 hover:text-red-400 transition-colors p-1"
+                    @click.stop="handleContainerAction(DockerAction.delete, container)"
+                    title="Delete container"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        fill="currentColor"
+                        d="M7 22q-.825 0-1.413-.588T5 20V6H4V4h5V3h6v1h5v2h-1v14q0 .825-.588 1.413T17 22H7Zm2-4h2V8H9v10Zm4 0h2V8h-2v10Z"
+                      />
+                    </svg>
+                  </button>
+                  <button
+                    class="text-gray-400 hover:text-purple-400 transition-colors p-1"
+                    @click.stop="viewContainerDetails(container)"
+                    title="View details"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="14"
+                      height="14"
+                      viewBox="0 0 32 32"
+                    >
+                      <path
+                        fill="currentColor"
+                        d="M16 28A12 12 0 1 0 4 16a12 12 0 0 0 12 12zm0-22a10 10 0 1 1-10 10a10 10 0 0 1 10-10z"
+                      />
+                      <path
+                        fill="currentColor"
+                        d="M16 22a1.5 1.5 0 1 0 1.5 1.5A1.5 1.5 0 0 0 16 22z"
+                      />
+                      <path
+                        fill="currentColor"
+                        d="M16 18a1 1 0 0 0 1-1v-4a1 1 0 0 0-2 0v4a1 1 0 0 0 1 1z"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -252,7 +465,9 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { dockerServices } from '@/services/DockerServices'
-import type { Container } from '@/types/Docker'
+import { type Container, DockerAction } from '@/types/Docker'
+import { toast } from 'vue-sonner'
+import { parseAction } from '@/utils/Docker'
 
 const router = useRouter()
 const containers = ref<Container[]>([])
@@ -260,6 +475,8 @@ const isLoading = ref(false)
 const error = ref<string | null>(null)
 const searchQuery = ref('')
 const expandedContainers = ref(new Set<string>())
+const containerFilter = ref('running')
+const viewMode = ref('grid')
 
 // Computed property for filtered containers
 const filteredContainers = computed(() => {
@@ -281,10 +498,13 @@ const fetchContainers = async () => {
   error.value = null
 
   try {
-    const data = await dockerServices.getContainers()
+    // Pass true for 'all' parameter when showing all containers, false for running only
+    const showAll = containerFilter.value === 'all'
+    const data = await dockerServices.getContainers(showAll)
     containers.value = data
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Failed to fetch containers'
+    toast.error('Failed to fetch containers')
     console.error('Error fetching containers:', err)
   } finally {
     isLoading.value = false
@@ -345,13 +565,26 @@ const toggleExpanded = (containerId: string) => {
   }
 }
 
-const handleContainerAction = (action: string, container: Container) => {
+const handleContainerAction = (action: DockerAction, container: Container) => {
   // TODO: Implement container actions (start, stop, restart, delete)
+  const fakeDockerLoading = () => new Promise((resolve) => setTimeout(resolve, 2000))
+  const actionMessage = parseAction(action)
+  toast.promise(fakeDockerLoading, {
+    loading: `${actionMessage}...`,
+    success: () => `${actionMessage} completed`,
+    error: () => `${actionMessage} failed`,
+  })
   console.log(`${action} container:`, container.Id)
 }
 
 const viewContainerDetails = (container: Container) => {
   router.push(`/containers/${container.Id}`)
+}
+
+const setContainerFilter = async (filter: string) => {
+  containerFilter.value = filter
+  // Refetch containers when filter changes
+  await fetchContainers()
 }
 
 // Load containers on mount

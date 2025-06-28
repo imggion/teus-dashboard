@@ -43,6 +43,9 @@
 
             <!-- Body -->
             <div class="px-4 pb-4">
+              <!-- Error Message -->
+              <ErrorMessage v-if="errorMessage" :error-message="errorMessage" class="mb-4" />
+
               <form @submit.prevent="submitForm">
                 <!-- Name -->
                 <div class="mb-5">
@@ -88,9 +91,13 @@
                         <div
                           class="flex items-center justify-center flex-shrink-0 overflow-visible"
                         >
-                          <Icon v-if="formData.icon" :icon="formData.icon" class="size-5" />
+                          <Icon
+                            v-if="formData.icon"
+                            :icon="getIconByName(formData.icon)"
+                            class="size-5"
+                          />
                         </div>
-                        <span v-if="formData.icon" class="truncate">{{ formData.name }}</span>
+                        <span v-if="formData.icon" class="truncate">{{ formData.icon }}</span>
                         <span v-else class="text-gray-500">Select an icon</span>
                       </div>
                       <svg
@@ -130,7 +137,7 @@
                             v-for="(icon, name) in filteredIcons"
                             :key="name"
                             :icon="icon"
-                            @click="selectIcon(icon)"
+                            @click="selectIcon(name)"
                             :class="[
                               'flex flex-col items-center justify-center size-8 p-1 rounded-lg cursor-pointer transition-all',
                               formData.icon === name
@@ -155,10 +162,10 @@
                   </button>
                   <button
                     type="submit"
-                    :disabled="loading"
+                    :disabled="isUpdatingBookmark"
                     class="cursor-pointer px-4 py-2 text-xs font-medium text-white bg-[#2e2e2e] border border-neutral-700/80 hover:bg-[#3e3e3e] active:bg-[#4e4e4e] rounded-xl focus:outline-none focus:ring-1 disabled:cursor-not-allowed transition-all"
                   >
-                    <span v-if="loading">
+                    <span v-if="isUpdatingBookmark">
                       <svg
                         class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline-block"
                         xmlns="http://www.w3.org/2000/svg"
@@ -179,7 +186,7 @@
                           d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                         ></path>
                       </svg>
-                      Saving...
+                      Updating...
                     </span>
                     <span v-else>Save</span>
                   </button>
@@ -194,14 +201,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed } from 'vue'
-import { useServicesStore } from '@/stores/services'
-import type { ServicePayload, ServicesSchema } from '@/types/Services'
+import { ref, reactive, computed, toRaw } from 'vue'
+import type { ServicePayload, ServicesPureSchema } from '@/types/Services'
 import { Icons } from '@/configs/Icons'
 import { Icon } from '@iconify/vue'
+import { toast } from 'vue-sonner'
+import { useMutation } from '@tanstack/vue-query'
+import { bookmarkServices } from '@/services/BookmarkServices'
+import ErrorMessage from '@/components/generics/ErrorMessage.vue'
+
 type EditServiceModalProps = {
   isOpen: boolean
-  service: ServicesSchema
+  service: ServicesPureSchema
 }
 
 // Props
@@ -210,12 +221,30 @@ const { isOpen, service } = defineProps<EditServiceModalProps>()
 // Emits
 const emit = defineEmits(['close', 'service-modified'])
 
-// Store
-const servicesStore = useServicesStore()
-const loading = ref(false)
+const errorMessage = ref('')
+
+const { mutate: updateBookmark, isPending: isUpdatingBookmark } = useMutation({
+  mutationFn: ({ id, payload }: { id: string; payload: ServicePayload }) =>
+    bookmarkServices.updateBookmark(id, payload),
+  onSuccess: () => {
+    emit('service-modified')
+    toast.success('Service updated successfully')
+    closeModal()
+  },
+  onError: (error: any) => {
+    console.error('Error during service update:', error)
+    toast.error('Failed to update service')
+    errorMessage.value =
+      error.response?.data?.message || 'An error occurred while updating the service'
+  },
+})
 
 // Form data
-const formData = reactive<ServicesSchema>({ ...service })
+const formData = reactive<ServicePayload>({
+  name: service.name,
+  link: service.link,
+  icon: service.icon,
+})
 
 const showIconPicker = ref(false)
 const iconSearch = ref('')
@@ -224,32 +253,32 @@ const closeModal = () => {
   emit('close')
 }
 
-const resetForm = () => {
-  formData.name = ''
-  formData.link = null
-  formData.icon = ''
+const validateForm = () => {
+  if (!formData.name || !formData.name.trim()) {
+    errorMessage.value = 'Service name is required'
+    return false
+  }
+
+  if (!formData.icon || !formData.icon.trim()) {
+    errorMessage.value = 'Icon is required'
+    return false
+  }
+
+  return true
 }
 
-const submitForm = async () => {
-  if (!service.id) return
+const submitForm = () => {
+  errorMessage.value = ''
 
-  loading.value = true
-  try {
-    const serviceId = service.id
-    const newService = servicesStore.updateService(serviceId, {
-      name: formData.name,
-      link: formData.link,
-      icon: formData.icon,
-    })
-
-    resetForm()
-    emit('service-modified', newService)
-    closeModal()
-  } catch (error) {
-    console.error('Error during service saving:', error)
-  } finally {
-    loading.value = false
+  if (!validateForm() || !service.id) {
+    return
   }
+
+  // Convert reactive object to plain object for proper serialization
+  const payload = toRaw(formData)
+  payload.icon = Icons[payload.icon as keyof typeof Icons] || ''
+
+  updateBookmark({ id: service.id, payload })
 }
 
 // Ottieni l'icona tramite il nome dalla collezione Icons
