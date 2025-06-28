@@ -24,11 +24,11 @@
     </div>
 
     <div class="tab-content">
-      <div v-if="activeTab === 'systemd'" class="tab-pane">
-        <SystemdServiceList />
-      </div>
       <div v-if="activeTab === 'docker'" class="tab-pane">
         <DockerContainerList />
+      </div>
+      <div v-if="activeTab === 'systemd'" class="tab-pane">
+        <SystemdServiceList />
       </div>
     </div>
   </div>
@@ -41,7 +41,7 @@ import SystemdServiceList from '@/components/services/SystemdServiceList.vue'
 import DockerContainerList from '@/components/services/DockerContainerList.vue'
 import { Icon } from '@iconify/vue/dist/iconify.js'
 
-const activeTab = ref('systemd')
+const activeTab = ref('docker')
 
 const tabs = [
   {

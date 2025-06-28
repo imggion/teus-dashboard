@@ -280,7 +280,8 @@ const containerName = computed(() => {
   return container.value.Names[0]?.replace(/^\//, '') || 'Unknown'
 })
 
-// Fetch container details
+// Fetch container detail
+// TODO: Fetch container details from the server
 const fetchContainerDetails = async () => {
   if (!containerId.value) return
 

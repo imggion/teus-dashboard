@@ -1,5 +1,5 @@
 <template>
-  <section>
+  <section v-if="!isLoading">
     <div class="flex flex-row gap-2 mb-4">
       <h2
         class="text-xl font-semibold text-gray-200 opacity-0 animate-fade-in-title"
@@ -16,6 +16,7 @@
           class="bg-[#1e1e1e] rounded-xl p-2 flex items-center justify-center cursor-pointer relative overflow-hidden shadow-lg transition-all duration-300 transform hover:translate-y-[-3px] border border-gray-700/30 hover:border-amber-500/30 hover:shadow-amber-500/10 active:translate-y-[1px] hover:scale-105 group"
         >
           <Icon
+            color="white"
             class="self-center my-auto transition-transform duration-300 group-hover:rotate-12"
             icon="hugeicons:edit-01"
           />
@@ -40,7 +41,7 @@
             @delete-service="handleDeleteService(service)"
           >
             <template #icon>
-              <Icon class="size-7" :icon="service.icon || Icons.plus" />
+              <Icon color="white" class="size-7" :icon="service.icon || Icons.plus" />
             </template>
           </GridButton>
         </component>
@@ -53,7 +54,7 @@
       >
         <GenericButton @click="handleOpenNewServiceModal">
           <template #icon>
-            <Icon class="size-7" :icon="Icons.plus" />
+            <Icon color="white" class="size-7" :icon="Icons.plus" />
           </template>
         </GenericButton>
       </div>
@@ -78,6 +79,22 @@
         <Icon :icon="Icons.plus" class="transition-transform duration-200 group-hover:rotate-90" />
         <span class="transition-transform duration-200 group-hover:translate-x-1">Add</span>
       </button>
+    </div>
+
+    <div
+      v-else
+      class="flex flex-row flex-wrap justify-center gap-3 opacity-0 animate-fade-in"
+      style="animation-delay: 0.3s"
+    >
+      <div class="text-center text-xs self-center text-gray-400">Loading bookmarks...</div>
+    </div>
+
+    <div
+      v-if="isError"
+      class="flex flex-row flex-wrap justify-center gap-3 opacity-0 animate-fade-in"
+      style="animation-delay: 0.3s"
+    >
+      <div class="text-center text-xs self-center text-gray-400">Error loading bookmarks</div>
     </div>
   </section>
 
@@ -109,7 +126,7 @@
     <EditServiceModal
       v-if="selectedService && isEditServiceModalOpen"
       :is-open="isEditServiceModalOpen"
-      :service="selectedService as ServicesSchema"
+      :service="selectedService as ServicesPureSchema"
       @close="handleCloseEditServiceModal"
       @service-modified="handleServiceModified"
     />
@@ -140,14 +157,28 @@ import { useServicesStore } from '@/stores/services'
 import NewServiceModal from '@/components/modals/NewServiceModal.vue'
 import EditServiceModal from '@/components/modals/EditServiceModal.vue'
 import DeleteConfirmationModal from './modals/DeleteConfirmationModal.vue'
-import type { ServicePayload, ServicesSchema } from '@/types/Services'
+import type { ServicePayload, ServicesPureSchema } from '@/types/Services'
 import { Icons } from '@/configs/Icons'
 import GenericButton from './generics/GenericButton.vue'
 import { Icon } from '@iconify/vue'
+import { useQuery } from '@tanstack/vue-query'
+import { bookmarkServices } from '@/services/BookmarkServices'
 
 // Definitions
-const servicesStore = useServicesStore()
-const services = computed(() => servicesStore.getAllServices as ServicesSchema[])
+const services = computed(() => bookmarks.value as ServicesPureSchema[])
+
+const {
+  data: bookmarks,
+  refetch: refetchBookmarks,
+  isLoading,
+  isError,
+  error,
+} = useQuery({
+  queryKey: ['bookmarks'],
+  queryFn: () => bookmarkServices.getBookmarks(),
+  retry: 2,
+  refetchOnWindowFocus: false,
+})
 
 // States
 const isNewServiceModalOpen = ref(false)
@@ -161,8 +192,9 @@ const handleLongPress = () => {
   isDeletingState.value = !isDeletingState.value
 }
 
-const handleServiceAdded = (service: ServicesSchema) => {
+const handleServiceAdded = (service: ServicesPureSchema) => {
   isNewServiceModalOpen.value = false
+  refetchBookmarks()
 }
 
 const handleOpenNewServiceModal = () => {
@@ -173,12 +205,12 @@ const handleCloseNewServiceModal = () => {
   isNewServiceModalOpen.value = false
 }
 
-const handleEditService = (service: ServicesSchema) => {
+const handleEditService = (service: ServicesPureSchema) => {
   selectedService.value = service
   isEditServiceModalOpen.value = true
 }
 
-const handleDeleteService = (service: ServicesSchema) => {
+const handleDeleteService = (service: ServicesPureSchema) => {
   selectedService.value = service
   isDeleteConfirmationModalOpen.value = true
 }
@@ -187,12 +219,14 @@ const handleCloseEditServiceModal = () => {
   isEditServiceModalOpen.value = false
 }
 
-const handleServiceModified = (service: ServicesSchema) => {
+const handleServiceModified = () => {
   isEditServiceModalOpen.value = false
+  refetchBookmarks()
 }
 
 const handleServiceDeleted = () => {
   isDeleteConfirmationModalOpen.value = false
+  refetchBookmarks()
 }
 </script>
 

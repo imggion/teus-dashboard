@@ -37,7 +37,3 @@ import DockerVersionCard from '@/components/DockerVersionCard.vue'
     </div>
   </SidebarLayout>
 </template>
-
-<style scoped>
-/* Removed unused animations to clean up the component */
-</style>

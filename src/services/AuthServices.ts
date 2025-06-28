@@ -28,4 +28,19 @@ export const authServices = {
       throw error
     }
   },
+
+  async isAuth(): Promise<boolean> {
+    try {
+      const response = await axios.post('/teus/check')
+      return response.status !== 401 && response.status !== 403
+    } catch (error: any) {
+      // If the error is 401 or 403, user is not authenticated
+      if (error.response?.status === 401 || error.response?.status === 403) {
+        return false
+      }
+      // For other errors, also return false but log them
+      console.error('Check auth error:', error)
+      return false
+    }
+  },
 }

@@ -43,6 +43,9 @@
 
             <!-- Body -->
             <div class="px-4 pb-4">
+              <!-- Error Message -->
+              <ErrorMessage v-if="errorMessage" :error-message="errorMessage" class="mb-4" />
+
               <form @submit.prevent="submitForm">
                 <!-- Content -->
                 <div class="mb-5">
@@ -59,10 +62,10 @@
                   </button>
                   <button
                     type="submit"
-                    :disabled="loading"
+                    :disabled="isDeletingBookmark"
                     class="cursor-pointer px-4 py-2 text-xs font-medium text-white bg-[#2e2e2e] border border-neutral-700/80 hover:bg-[#3e3e3e] active:bg-[#4e4e4e] rounded-xl focus:outline-none focus:ring-1 disabled:cursor-not-allowed transition-all"
                   >
-                    <span v-if="loading">
+                    <span v-if="isDeletingBookmark">
                       <svg
                         class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline-block"
                         xmlns="http://www.w3.org/2000/svg"
@@ -99,38 +102,50 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useServicesStore } from '@/stores/services'
+import { toast } from 'vue-sonner'
+import { useMutation } from '@tanstack/vue-query'
+import { bookmarkServices } from '@/services/BookmarkServices'
+import ErrorMessage from '@/components/generics/ErrorMessage.vue'
 
-type EditServiceModalProps = {
+type DeleteServiceModalProps = {
   isOpen: boolean
   serviceId?: string
 }
 
 // Props
-const { isOpen, serviceId } = defineProps<EditServiceModalProps>()
+const { isOpen, serviceId } = defineProps<DeleteServiceModalProps>()
 
 // Emits
 const emit = defineEmits(['close', 'service-deleted'])
 
-// Store
-const servicesStore = useServicesStore()
-const loading = ref(false)
+const errorMessage = ref('')
+
+const { mutate: deleteBookmark, isPending: isDeletingBookmark } = useMutation({
+  mutationFn: (id: string) => bookmarkServices.deleteBookmark(id),
+  onSuccess: () => {
+    emit('service-deleted')
+    toast.success('Service deleted successfully')
+    closeModal()
+  },
+  onError: (error: any) => {
+    console.error('Error during service deletion:', error)
+    toast.error('Failed to delete service')
+    errorMessage.value =
+      error.response?.data?.message || 'An error occurred while deleting the service'
+  },
+})
 
 const closeModal = () => {
   emit('close')
 }
 
-const submitForm = async () => {
-  loading.value = true
-  try {
-    if (serviceId) servicesStore.deleteService(serviceId)
-    emit('service-deleted')
-    closeModal()
-  } catch (error) {
-    console.error('Error during service saving:', error)
-  } finally {
-    loading.value = false
+const submitForm = () => {
+  if (!serviceId) {
+    errorMessage.value = 'Service ID is required'
+    return
   }
+
+  deleteBookmark(serviceId)
 }
 </script>
 

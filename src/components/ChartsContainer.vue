@@ -1,5 +1,5 @@
 <template>
-  <div class="charts-grid">
+  <div class="charts-grid mb-6 xl:mb-0">
     <!-- CPU Usage Chart -->
     <div class="chart-card chart-card--primary" data-chart="cpu">
       <div class="chart-header">
