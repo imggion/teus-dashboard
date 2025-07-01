@@ -1,6 +1,6 @@
 import AxiosClass from '@/configs/Axios'
 import type { TeusConfigSchema } from '@/types/Config'
-import type { Containers, DockerVersion } from '@/types/Docker'
+import type { Containers, DockerVersion, ContainerInspectResponse } from '@/types/Docker'
 
 const axios = AxiosClass.getInstance()
 export const dockerServices = {
@@ -20,6 +20,18 @@ export const dockerServices = {
       return response.data
     } catch (error) {
       console.error('Error fetching Docker containers:', error)
+      throw error
+    }
+  },
+
+  async getContainerDetails(containerId: string): Promise<ContainerInspectResponse> {
+    try {
+      const response = await axios.get<ContainerInspectResponse>(
+        `/teus/docker/container/${containerId}`,
+      )
+      return response.data
+    } catch (error) {
+      console.error('Error fetching container details:', error)
       throw error
     }
   },
