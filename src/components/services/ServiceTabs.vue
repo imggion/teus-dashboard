@@ -45,14 +45,14 @@ const activeTab = ref('docker')
 
 const tabs = [
   {
-    id: 'systemd',
-    name: 'System Services',
-    icon: Icons.system,
-  },
-  {
     id: 'docker',
     name: 'Docker Containers',
     icon: Icons.docker,
+  },
+  {
+    id: 'systemd',
+    name: 'System Services',
+    icon: Icons.system,
   },
 ]
 </script>

@@ -468,7 +468,10 @@
 
       <!-- Action Buttons -->
       <div class="bg-[#1e1e1e] rounded-2xl p-6 border border-gray-800">
-        <h2 class="text-xl font-semibold text-white mb-4">Actions</h2>
+        <h2 class="text-xl font-semibold text-white mb-0">Actions</h2>
+        <p class="text-gray-400 mb-4">
+          Not available yet. Please use the Docker CLI to manage your containers.
+        </p>
         <div class="flex flex-wrap gap-3">
           <button
             v-if="container.State?.Running"
